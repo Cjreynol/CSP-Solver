@@ -6,10 +6,10 @@ module Solver(
 import Sudoku
 
 recBacktracking :: SudokuBoard -> SudokuBoard
-recBacktracking board
-    | solvedBoard board = board
-    | otherwise = undefined
-
+recBacktracking board = undefined
+    where
+        nextPos = minRemainingValues board
+        posValues = leastConstrainingValue nextPos board
 
 
 

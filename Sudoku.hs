@@ -7,6 +7,8 @@ module Sudoku(
     ) where
 
 
+import qualified Data.List as List (sortBy)
+import Data.Ord (comparing)
 import Data.Sequence as Seq
 import qualified Data.Set as Set
 
@@ -48,8 +50,28 @@ getCage n board = fromList $ map (\z -> getDigit z board) [(x,y) | x <- [startr.
         endr = startr + 2
         endc = startc + 2
 
-cageFromBoardPos :: BoardPosition -> Int
-cageFromBoardPos (r,c) = (div r 3) * 3 + (mod c 3)
+cagePosFromBoardPos :: BoardPosition -> Int
+cagePosFromBoardPos (r,c) = (div r 3) * 3 + (mod c 3)
+
+getAllRelatedDigits :: BoardPosition -> SudokuBoard -> Seq SudokuDigit
+getAllRelatedDigits pos@(r,c) board = (getRow r board) >< (getCol c board) >< (getCage (cagePosFromBoardPos pos) board)
+
+getRowPositions :: Int -> [BoardPosition]
+getRowPositions n = [(r,c) | r <- [n], c <- [0..8]]
+
+getColPositions :: Int -> [BoardPosition]
+getColPositions n = [(r,c) | r <- [0..8], c <- [n]]
+
+getCagePositions :: Int -> [BoardPosition]
+getCagePositions n = [(x,y) | x <- [startr..endr], y <- [startc..endc]]
+    where
+        startr = (div n 3) * 3
+        startc = (mod n 3) * 3
+        endr = startr + 2
+        endc = startc + 2
+
+getAllRelatedPositions :: BoardPosition -> [BoardPosition]
+getAllRelatedPositions pos@(r,c) = (getRowPositions r) ++ (getColPositions c) ++ (getCagePositions (cagePosFromBoardPos pos))
 
 checkIfSeqGen :: Bool -> Seq SudokuDigit -> Bool
 checkIfSeqGen solveCheck digits = helper digits Set.empty
@@ -95,17 +117,37 @@ solvedBoard :: SudokuBoard -> Bool
 solvedBoard board = (solvedRows board) && (solvedCols board) && (solvedCages board)
 
 legalValues :: BoardPosition -> SudokuBoard -> Set.Set SudokuDigit
-legalValues pos@(r,c) board = foldr helper sudokuDomain intersects
+legalValues pos@(r,c) board = foldr helper sudokuDomain (getAllRelatedDigits pos board)
     where 
         helper :: SudokuDigit -> Set.Set SudokuDigit -> Set.Set SudokuDigit
         helper digit set 
             | digit == Blank = set
             | otherwise = Set.delete digit set
-        intersects = (getRow r board) >< (getCol c board) >< (getCage (cageFromBoardPos pos) board)
 
--- maybe use foldrWithIndex to get indexs for board pos
 minRemainingValues :: SudokuBoard -> BoardPosition
-minRemainingValues (Board board) = undefined 
+minRemainingValues board@(Board ((x :<| xs) :<| xss)) 
+    | x == Blank = helper (Set.size (legalValues (0,0) board)) (0,0) (0,0) (xs <| xss)
+    | otherwise = helper (-1) (0,0) (0,0) (xs <| xss)
+    where 
+        helper :: Int -> BoardPosition ->  BoardPosition -> Seq (Seq SudokuDigit) -> BoardPosition
+        helper minVals minPos newPos (Empty) = minPos
+        helper minVals minPos (r,c) ((Empty) :<| xs) = helper minVals minPos ((r+1),0) xs
+        helper minVals minPos pos@(r,c) ((x :<| xs) :<| xss) 
+            | x == Blank = let  newVals = Set.size (legalValues pos board) 
+                                nextPos = (r,(c+1)) 
+                                nextSeq = (xs <| xss) in 
+                                case (minVals == (-1)) || (newVals < minVals) of
+                                    True -> helper newVals pos nextPos nextSeq
+                                    False -> helper minVals minPos nextPos nextSeq
+            | otherwise = helper minVals minPos (r,(c+1)) (xs <| xss)
+
+leastConstrainingValue :: BoardPosition -> SudokuBoard -> [SudokuDigit]
+leastConstrainingValue pos board = map fst $ List.sortBy (comparing snd) valsCounts
+    where 
+        vals = Set.toList $ legalValues pos board
+        relatedPositions = getAllRelatedPositions pos
+        valsBoards = Prelude.zip vals $ map (\x -> updateBoard pos x board) vals
+        valsCounts = Prelude.zip vals $ map ((\b -> sum (map (\p -> Set.size (legalValues p b)) relatedPositions)) . snd) valsBoards
 
 sudokuDomain :: Set.Set SudokuDigit
 sudokuDomain = Set.fromList [One, Two, Three, Four, Five, Six, Seven, Eight, Nine]
@@ -115,6 +157,7 @@ sudokuDomain = Set.fromList [One, Two, Three, Four, Five, Six, Seven, Eight, Nin
 -}
 
 testBoard = initializeBoard [((0,0),One), ((0,1),Two), ((1,0), Three), ((0,8), Nine)]
+testBoard2 = initializeBoard [((0,0),One), ((0,1),Two), ((1,0), Three), ((0,2), Four), ((1,1), Five), ((0,8), Nine)]
 
 
 {-
