@@ -1,4 +1,5 @@
 module Sudoku(
+    SudokuBoard,
     updateBoard,
     initializeBoard,
     validBoard,
@@ -47,6 +48,9 @@ getCage n board = fromList $ map (\z -> getDigit z board) [(x,y) | x <- [startr.
         endr = startr + 2
         endc = startc + 2
 
+cageFromBoardPos :: BoardPosition -> Int
+cageFromBoardPos (r,c) = (div r 3) * 3 + (mod c 3)
+
 checkIfSeqGen :: Bool -> Seq SudokuDigit -> Bool
 checkIfSeqGen solveCheck digits = helper digits Set.empty
     where
@@ -90,6 +94,21 @@ solvedCages board = checkGen checkIfSolvedSeq getCage board
 solvedBoard :: SudokuBoard -> Bool
 solvedBoard board = (solvedRows board) && (solvedCols board) && (solvedCages board)
 
+legalValues :: BoardPosition -> SudokuBoard -> Set.Set SudokuDigit
+legalValues pos@(r,c) board = foldr helper sudokuDomain intersects
+    where 
+        helper :: SudokuDigit -> Set.Set SudokuDigit -> Set.Set SudokuDigit
+        helper digit set 
+            | digit == Blank = set
+            | otherwise = Set.delete digit set
+        intersects = (getRow r board) >< (getCol c board) >< (getCage (cageFromBoardPos pos) board)
+
+-- maybe use foldrWithIndex to get indexs for board pos
+minRemainingValues :: SudokuBoard -> BoardPosition
+minRemainingValues (Board board) = undefined 
+
+sudokuDomain :: Set.Set SudokuDigit
+sudokuDomain = Set.fromList [One, Two, Three, Four, Five, Six, Seven, Eight, Nine]
 
 {-
 -- Testing helpers
