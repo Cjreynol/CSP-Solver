@@ -1,9 +1,16 @@
 module Sudoku(
     SudokuBoard,
+    BoardPosition,
+    SudokuDigit,
     updateBoard,
     initializeBoard,
     validBoard,
-    solvedBoard
+    solvedBoard,
+    minRemainingValues,
+    leastConstrainingValue,
+    testBoard,
+    testBoard2,
+    testBoard3
     ) where
 
 
@@ -12,10 +19,14 @@ import Data.Ord (comparing)
 import Data.Sequence as Seq
 import qualified Data.Set as Set
 
+
 data SudokuDigit =  Blank | One | Two | 
                     Three | Four | Five | 
                     Six | Seven | Eight | Nine
                     deriving (Eq, Ord)
+
+sudokuDomain :: Set.Set SudokuDigit
+sudokuDomain = Set.fromList [One, Two, Three, Four, Five, Six, Seven, Eight, Nine]
 
 data SudokuBoard = Board (Seq (Seq SudokuDigit))
 
@@ -51,7 +62,7 @@ getCage n board = fromList $ map (\z -> getDigit z board) [(x,y) | x <- [startr.
         endc = startc + 2
 
 cagePosFromBoardPos :: BoardPosition -> Int
-cagePosFromBoardPos (r,c) = (div r 3) * 3 + (mod c 3)
+cagePosFromBoardPos (r,c) = ((div r 3) * 3) + (mod (div c 3) 3)
 
 getAllRelatedDigits :: BoardPosition -> SudokuBoard -> Seq SudokuDigit
 getAllRelatedDigits pos@(r,c) board = (getRow r board) >< (getCol c board) >< (getCage (cagePosFromBoardPos pos) board)
@@ -117,7 +128,9 @@ solvedBoard :: SudokuBoard -> Bool
 solvedBoard board = (solvedRows board) && (solvedCols board) && (solvedCages board)
 
 legalValues :: BoardPosition -> SudokuBoard -> Set.Set SudokuDigit
-legalValues pos@(r,c) board = foldr helper sudokuDomain (getAllRelatedDigits pos board)
+legalValues pos@(r,c) board 
+    | getDigit pos board == Blank = foldr helper sudokuDomain (getAllRelatedDigits pos board)
+    | otherwise = Set.empty
     where 
         helper :: SudokuDigit -> Set.Set SudokuDigit -> Set.Set SudokuDigit
         helper digit set 
@@ -125,21 +138,19 @@ legalValues pos@(r,c) board = foldr helper sudokuDomain (getAllRelatedDigits pos
             | otherwise = Set.delete digit set
 
 minRemainingValues :: SudokuBoard -> BoardPosition
-minRemainingValues board@(Board ((x :<| xs) :<| xss)) 
-    | x == Blank = helper (Set.size (legalValues (0,0) board)) (0,0) (0,0) (xs <| xss)
-    | otherwise = helper (-1) (0,0) (0,0) (xs <| xss)
+minRemainingValues board@(Board iboard@((x :<| xs) :<| xss)) = helper (-1) (0,0) (0,0) iboard
     where 
         helper :: Int -> BoardPosition ->  BoardPosition -> Seq (Seq SudokuDigit) -> BoardPosition
-        helper minVals minPos newPos (Empty) = minPos
-        helper minVals minPos (r,c) ((Empty) :<| xs) = helper minVals minPos ((r+1),0) xs
-        helper minVals minPos pos@(r,c) ((x :<| xs) :<| xss) 
+        helper minCnt minPos newPos (Empty) = minPos
+        helper minCnt minPos (r,c) ((Empty) :<| xs) = helper minCnt minPos ((r+1),0) xs
+        helper minCnt minPos pos@(r,c) ((x :<| xs) :<| xss) 
             | x == Blank = let  newVals = Set.size (legalValues pos board) 
                                 nextPos = (r,(c+1)) 
                                 nextSeq = (xs <| xss) in 
-                                case (minVals == (-1)) || (newVals < minVals) of
+                                case (minCnt == (-1)) || (newVals < minCnt) of
                                     True -> helper newVals pos nextPos nextSeq
-                                    False -> helper minVals minPos nextPos nextSeq
-            | otherwise = helper minVals minPos (r,(c+1)) (xs <| xss)
+                                    False -> helper minCnt minPos nextPos nextSeq
+            | otherwise = helper minCnt minPos (r,(c+1)) (xs <| xss)
 
 leastConstrainingValue :: BoardPosition -> SudokuBoard -> [SudokuDigit]
 leastConstrainingValue pos board = map fst $ List.sortBy (comparing snd) valsCounts
@@ -148,21 +159,6 @@ leastConstrainingValue pos board = map fst $ List.sortBy (comparing snd) valsCou
         relatedPositions = getAllRelatedPositions pos
         valsBoards = Prelude.zip vals $ map (\x -> updateBoard pos x board) vals
         valsCounts = Prelude.zip vals $ map ((\b -> sum (map (\p -> Set.size (legalValues p b)) relatedPositions)) . snd) valsBoards
-
-sudokuDomain :: Set.Set SudokuDigit
-sudokuDomain = Set.fromList [One, Two, Three, Four, Five, Six, Seven, Eight, Nine]
-
-{-
--- Testing helpers
--}
-
-testBoard = initializeBoard [((0,0),One), ((0,1),Two), ((1,0), Three), ((0,8), Nine)]
-testBoard2 = initializeBoard [((0,0),One), ((0,1),Two), ((1,0), Three), ((0,2), Four), ((1,1), Five), ((0,8), Nine)]
-
-
-{-
--- Typeclass Instances
--}
 
 instance Show SudokuDigit where
     show (Blank) = " "
@@ -188,4 +184,14 @@ rowShow :: Seq SudokuDigit -> String
 rowShow (Empty) = ""
 rowShow (x :<| Empty) = show x
 rowShow (x :<| xs) = show x ++ " | " ++ rowShow xs
+
+{-
+-- Testing helpers
+-}
+
+testBoard = initializeBoard [((0,0),One), ((0,1),Two), ((1,0), Three), ((0,8), Nine)]
+
+testBoard2 = initializeBoard [((0,0),One), ((0,1),Two), ((1,0), Three), ((0,2), Four), ((1,1), Five), ((0,8), Nine)]
+
+testBoard3 = initializeBoard [((0,0), Eight),((0,3), Nine),((0,4), Three),((0,8), Two),((1,2), Nine),((1,7), Four),((2,0), Seven),((2,2), Two),((2,3), One),((2,6), Nine),((2,7), Six),((3,0), Two),((3,7), Nine),((4,1), Six),((4,7), Seven),((5,1), Seven),((5,5), Six),((5,8), Five),((6,1), Two),((6,2), Seven),((6,5), Eight),((6,6), Four),((6,8), Six),((7,1), Three),((7,6), Five),((8,0), Five),((8,4), Six),((8,5), Two),((8,8), Eight)]
 
