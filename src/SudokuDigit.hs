@@ -14,7 +14,7 @@ data SudokuDigit =  Blank | One | Two |
                     deriving (Eq, Ord)
 
 instance Show SudokuDigit where
-    show = show . digitToChar
+    show = \x -> [digitToChar x]
 
 digitToChar :: SudokuDigit -> Char
 digitToChar (Blank) = ' '

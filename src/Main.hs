@@ -6,12 +6,13 @@ import SudokuBoard          (strToBoard)
 main :: IO ()
 main = do
         args <- getArgs
-        putStrLn $ processInput args
+        processInput args
 
-processInput :: [String] -> String
+processInput :: [String] -> IO ()
 processInput args = case length args of 
-                    1 -> oneArg (head args)
-                    2 -> twoArg (head args) (head . tail $ args)
+                    0 -> loopSolving
+                    1 -> putStrLn $ oneArg (head args)
+                    2 -> putStrLn $ twoArg (head args) (head . tail $ args)
                     _ -> error "Unexpected number of inputs, 1 or 2 expected"
     where
         oneArg :: String -> String
@@ -23,10 +24,11 @@ processInput args = case length args of
                                     True -> "Correct Solution"
                                     False -> "Incorrect Solution"
                                 
-
-
-
-{-
-Need an alternate path for when there are no args to prompt for input
--}
+loopSolving :: IO ()
+loopSolving = do
+                args <- getLine
+                case args == "" of
+                    True -> loopSolving
+                    False -> processInput [args]
+                loopSolving
 
