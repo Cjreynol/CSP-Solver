@@ -6,6 +6,7 @@ module SudokuBoard(
     getAllRelatedPositions,
     getDigit,
     initializeBoard,
+    strToBoard,
     updateBoard,
     validBoard,
     solvedBoard
@@ -17,10 +18,11 @@ import              Data.Sequence as Seq    (Seq(..), adjust', fromList,
                                                 update, (><))
 import qualified    Data.Set as Set         (Set, empty, insert, member)
 
-import              SudokuDigit             (SudokuDigit(Blank))
+import              SudokuDigit             (SudokuDigit(Blank), charToDigit)
 
 
 data SudokuBoard = Board (Seq (Seq SudokuDigit))
+    deriving (Eq)
 
 instance Show SudokuBoard where
     show = boardShow
@@ -46,6 +48,17 @@ initializeBoard updates = foldr helper emptyBoard updates
     where 
         helper :: (BoardPosition, SudokuDigit) -> SudokuBoard -> SudokuBoard
         helper (pos,digit) board = updateBoard pos digit board
+
+strToInitList :: String -> [(BoardPosition, SudokuDigit)]
+strToInitList s = zipWith helper [0..] s
+    where
+        helper :: Int -> Char -> (BoardPosition, SudokuDigit)
+        helper n ch = (indexToBoardPos n, charToDigit ch)
+        indexToBoardPos :: Int -> BoardPosition
+        indexToBoardPos n = (div n 9, mod n 9)
+
+strToBoard :: String -> SudokuBoard
+strToBoard s = initializeBoard . strToInitList $ s
 
 updateBoard :: BoardPosition -> SudokuDigit -> SudokuBoard -> SudokuBoard
 updateBoard (r,c) digit (Board board) = Board (adjust' (update c digit) r board)

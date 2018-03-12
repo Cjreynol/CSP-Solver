@@ -15,6 +15,7 @@ import              SudokuBoard             (BoardPosition, SudokuBoard(..),
                                                 validBoard)
 import              SudokuDigit             (SudokuDigit(..), sudokuDomain)
 
+
 recBacktracking :: SudokuBoard -> SudokuBoard
 recBacktracking board = recBacktracking' nextPos posValues board
     where
