@@ -1,11 +1,15 @@
+{-|
+Module      : SudokuBoard
+Description : Datatype and functions for representing/manipulating a sudoku 
+                board
+Copyright   : (c) Chad Reynolds, 2018
+-}
 module SudokuBoard(
     SudokuBoard(Board),
     BoardPosition,
-    SudokuDigit,
     getAllRelatedDigits,
     getAllRelatedPositions,
     getDigit,
-    initializeBoard,
     strToBoard,
     updateBoard,
     validBoard,
@@ -21,6 +25,7 @@ import qualified    Data.Set as Set         (Set, empty, insert, member)
 import              SudokuDigit             (SudokuDigit(Blank), charToDigit)
 
 
+-- | Contains the state of the board.
 data SudokuBoard = Board (Seq (Seq SudokuDigit))
     deriving (Eq)
 
@@ -37,8 +42,8 @@ rowShow (Empty) = ""
 rowShow (x :<| Empty) = show x
 rowShow (x :<| xs) = show x ++ " | " ++ rowShow xs
 
+-- | Represents the row, column pairs to index positions in the board.
 type BoardPosition = (Int, Int)
-
 
 emptyBoard :: SudokuBoard
 emptyBoard = Board (Seq.replicate 9 $ Seq.replicate 9 Blank)
@@ -57,12 +62,18 @@ strToInitList s = zipWith helper [0..] s
         indexToBoardPos :: Int -> BoardPosition
         indexToBoardPos n = (div n 9, mod n 9)
 
+-- | Converts a string into a sudoku board.
+--
+-- Expects a string of 81 characters of digits 1-9.  Any other char is 
+-- interpreted as a Blank.
 strToBoard :: String -> SudokuBoard
 strToBoard s = initializeBoard . strToInitList $ s
 
+-- | Returns a new board with the digit in the given position.
 updateBoard :: BoardPosition -> SudokuDigit -> SudokuBoard -> SudokuBoard
 updateBoard (r,c) digit (Board board) = Board (adjust' (update c digit) r board)
 
+-- | Returns the digit in the given board at the given position.
 getDigit :: BoardPosition -> SudokuBoard -> SudokuDigit
 getDigit (r,c) (Board board) = index (index board r) c
 
@@ -83,6 +94,8 @@ getCage n board = fromList $ map (\z -> getDigit z board) [(x,y) | x <- [startr.
         endr = startr + 2
         endc = startc + 2
 
+-- | Returns a sequence of all the digits in the same row/col/cage as the 
+-- given position, including the given position.
 getAllRelatedDigits :: BoardPosition -> SudokuBoard -> Seq SudokuDigit
 getAllRelatedDigits pos@(r,c) board = (getRow r board) >< (getCol c board) >< (getCage (cagePosFromBoardPos pos) board)
 
@@ -100,6 +113,8 @@ getCagePositions n = [(x,y) | x <- [startr..endr], y <- [startc..endc]]
         endr = startr + 2
         endc = startc + 2
 
+-- | Returns a list of all the board positions in the same row/col/cage as the 
+-- given position, including the given position.
 getAllRelatedPositions :: BoardPosition -> [BoardPosition]
 getAllRelatedPositions pos@(r,c) = (getRowPositions r) ++ (getColPositions c) ++ (getCagePositions (cagePosFromBoardPos pos))
 
@@ -131,6 +146,8 @@ validCols board = checkGen checkIfValidSeq getCol board
 validCages :: SudokuBoard -> Bool
 validCages board = checkGen checkIfValidSeq getCage board
 
+-- | Returns a boolean indicating if the board is valid(no duplicates in any 
+-- row/col/cage, blanks allowed).
 validBoard :: SudokuBoard -> Bool
 validBoard board = (validRows board) && (validCols board) && (validCages board)
 
@@ -143,6 +160,8 @@ solvedCols board = checkGen checkIfSolvedSeq getCol board
 solvedCages :: SudokuBoard -> Bool
 solvedCages board = checkGen checkIfSolvedSeq getCage board
 
+-- | Returns a boolean indicating if the board is solved(no duplicates in any 
+-- row/col/cage, blanks not allowed).
 solvedBoard :: SudokuBoard -> Bool
 solvedBoard board = (solvedRows board) && (solvedCols board) && (solvedCages board)
 

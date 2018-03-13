@@ -1,3 +1,8 @@
+{-|
+Module      : Solver
+Description : Functions for solving board
+Copyright   : (c) Chad Reynolds, 2018
+-}
 module Solver(
     recBacktracking
     ) where
@@ -16,6 +21,9 @@ import              SudokuBoard             (BoardPosition, SudokuBoard(..),
 import              SudokuDigit             (SudokuDigit(..), sudokuDomain)
 
 
+-- | Recursively attempts placements of digits in positions, backtracking 
+-- when an invalid placement is made.  Uses MRV to direct position choices 
+-- and LCV to direct digit choices to minimize the amount of backtracking.
 recBacktracking :: SudokuBoard -> SudokuBoard
 recBacktracking board = recBacktracking' nextPos posValues board
     where
