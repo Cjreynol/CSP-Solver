@@ -7,9 +7,8 @@ Copyright   : (c) Chad Reynolds, 2018
 module SudokuBoard(
     SudokuBoard(Board),
     BoardPosition,
-    getAllRelatedDigits,
     getAllRelatedPositions,
-    getDigit,
+    legalDigits,
     strToBoard,
     updateBoard,
     validBoard,
@@ -20,9 +19,12 @@ module SudokuBoard(
 import              Data.Sequence as Seq    (Seq(..), adjust', fromList, 
                                                 index, replicate, 
                                                 update, (><))
-import qualified    Data.Set as Set         (Set, empty, insert, member)
+import qualified    Data.Set as Set         (Set, delete, empty, insert, 
+                                                member)
 
-import              SudokuDigit             (SudokuDigit(Blank), charToDigit)
+import              CSP                     (CSP(..), Problem(..))
+import              SudokuDigit             (SudokuDigit(Blank), charToDigit,
+                                                sudokuDomain)
 
 
 -- | Contains the state of the board.
@@ -31,6 +33,15 @@ data SudokuBoard = Board (Seq (Seq SudokuDigit))
 
 instance Show SudokuBoard where
     show = boardShow
+
+instance Problem SudokuBoard where
+    consistent = validBoard
+    complete = solvedBoard
+
+instance CSP SudokuBoard BoardPosition SudokuDigit where
+    legalValues = legalDigits
+    relatedVariables = \bp b -> getAllRelatedPositions bp
+    addAssignment = updateBoard
 
 boardShow :: SudokuBoard -> String
 boardShow (Board Empty) = ""
@@ -164,4 +175,14 @@ solvedCages board = checkGen checkIfSolvedSeq getCage board
 -- row/col/cage, blanks not allowed).
 solvedBoard :: SudokuBoard -> Bool
 solvedBoard board = (solvedRows board) && (solvedCols board) && (solvedCages board)
+
+legalDigits :: BoardPosition -> SudokuBoard -> Set.Set SudokuDigit
+legalDigits pos@(r,c) board 
+    | getDigit pos board == Blank = foldr helper sudokuDomain (getAllRelatedDigits pos board)
+    | otherwise = Set.empty
+    where 
+        helper :: SudokuDigit -> Set.Set SudokuDigit -> Set.Set SudokuDigit
+        helper digit set 
+            | digit == Blank = set
+            | otherwise = Set.delete digit set
 

@@ -1,5 +1,5 @@
 main:
-	ghc src/Main.hs -isrc -outputdir bin -o solver
+	ghc src/Main.hs -XFlexibleInstances -XMultiParamTypeClasses -XFunctionalDependencies -XTypeSynonymInstances -isrc -outputdir bin -o solver
 
 documentation:
 	haddock -o docs -h src/*.hs
