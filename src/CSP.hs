@@ -16,7 +16,7 @@ import Data.Set (Set)
 
 
 -- | Represents the interface required by CSP assignments so that it can be 
--- checked that it is valid but unsolved and valid and solved, respectively
+-- checked that it is valid but unsolved or valid and solved, respectively
 class Assignment a where
     consistent  :: a -> Bool
     complete    :: a -> Bool

@@ -9,7 +9,6 @@ Copyright   : (c) Chad Reynolds, 2018
 -}
 module SudokuBoard(
     SudokuBoard,
-    strToBoard,
     ) where
 
 
@@ -29,7 +28,10 @@ data SudokuBoard = Board (Seq (Seq SudokuDigit))
     deriving (Eq)
 
 instance Show SudokuBoard where
-    show = boardShow
+    show = showBoard
+
+instance Read SudokuBoard where
+    readsPrec _ value = [((readBoard value), "")]
 
 instance Assignment SudokuBoard where
     consistent = validBoard
@@ -41,10 +43,10 @@ instance CSP SudokuBoard BoardPosition SudokuDigit where
     addAssignment = updateBoard
     minValueCount = minDigitCount
 
-boardShow :: SudokuBoard -> String
-boardShow (Board Empty) = ""
-boardShow (Board (x :<| Empty)) = rowShow x
-boardShow (Board (x :<| xs)) = rowShow x ++ "\n" ++ boardShow (Board xs)
+showBoard :: SudokuBoard -> String
+showBoard (Board Empty) = ""
+showBoard (Board (x :<| Empty)) = rowShow x
+showBoard (Board (x :<| xs)) = rowShow x ++ "\n" ++ showBoard (Board xs)
 
 rowShow :: Seq SudokuDigit -> String
 rowShow (Empty) = ""
@@ -75,8 +77,8 @@ strToInitList s = zipWith helper [0..] s
 --
 -- Expects a string of 81 characters of digits 1-9.  Any other char is 
 -- interpreted as a Blank.
-strToBoard :: String -> SudokuBoard
-strToBoard s = initializeBoard . strToInitList $ s
+readBoard :: String -> SudokuBoard
+readBoard s = initializeBoard . strToInitList $ s
 
 updateBoard :: BoardPosition -> SudokuDigit -> SudokuBoard -> SudokuBoard
 updateBoard (r,c) digit (Board board) = Board (adjust' (update c digit) r board)

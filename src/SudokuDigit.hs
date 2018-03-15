@@ -4,7 +4,7 @@ Description : Datatype for domain of SudokuBoard "squares"
 Copyright   : (c) Chad Reynolds, 2018
 -}
 module SudokuDigit(
-    SudokuDigit(..),
+    SudokuDigit(Blank),
     charToDigit,
     sudokuDomain
     ) where
@@ -22,19 +22,23 @@ data SudokuDigit =  Blank | One | Two |
                     deriving (Eq, Ord)
 
 instance Show SudokuDigit where
-    show = \x -> [digitToChar x]
+    show = showDigit
 
-digitToChar :: SudokuDigit -> Char
-digitToChar (Blank) = ' '
-digitToChar (One) = '1'
-digitToChar (Two) = '2'
-digitToChar (Three) = '3'
-digitToChar (Four) = '4'
-digitToChar (Five) = '5'
-digitToChar (Six) = '6'
-digitToChar (Seven) = '7'
-digitToChar (Eight) = '8'
-digitToChar (Nine) = '9'
+instance Read SudokuDigit where
+    readsPrec _ (x:xs) = [((charToDigit x),xs)]
+    readsPrec _ _ = []
+
+showDigit :: SudokuDigit -> String
+showDigit (Blank) = " "
+showDigit (One) = "1"
+showDigit (Two) = "2"
+showDigit (Three) = "3"
+showDigit (Four) = "4"
+showDigit (Five) = "5"
+showDigit (Six) = "6"
+showDigit (Seven) = "7"
+showDigit (Eight) = "8"
+showDigit (Nine) = "9"
 
 -- | Converts Char to SudokuDigit for encoding Strings to SudokuBoards.
 charToDigit :: Char -> SudokuDigit
