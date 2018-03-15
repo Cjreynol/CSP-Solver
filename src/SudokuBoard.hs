@@ -1,3 +1,6 @@
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeSynonymInstances #-}
+
+
 {-|
 Module      : SudokuBoard
 Description : Datatype and functions for representing/manipulating a sudoku 
@@ -36,7 +39,7 @@ instance CSP SudokuBoard BoardPosition SudokuDigit where
     legalValues = legalDigits
     relatedVariables = \bp b -> getAllRelatedPositions bp
     addAssignment = updateBoard
-    valueCount = digitCount
+    minValueCount = minDigitCount
 
 boardShow :: SudokuBoard -> String
 boardShow (Board Empty) = ""
@@ -181,14 +184,17 @@ legalDigits pos@(r,c) board
             | digit == Blank = set
             | otherwise = Set.delete digit set
 
-digitCount :: SudokuBoard -> [(BoardPosition, Int)]
-digitCount (Board board) = helper [] (0,0) board
-    where
-        helper :: [(BoardPosition, Int)] -> BoardPosition -> Seq (Seq SudokuDigit) -> [(BoardPosition, Int)]
-        helper l pos (Empty) = case l of
-                                [] -> [((0,0),0)] -- was default value of previos version
-                                _ -> l
-        helper l (r,c) ((Empty) :<| xs) = helper l ((r+1),0) xs
-        helper l pos@(r,c) ((x :<| xs) :<| xss) 
-            | x == Blank = helper ((pos,(Set.size (legalDigits pos (Board board)))):l) (r,(c+1)) (xs <| xss)
-            | otherwise = helper l (r,(c+1)) (xs <| xss)
+minDigitCount :: SudokuBoard -> BoardPosition
+minDigitCount (Board board) = helper (-1) (0,0) (0,0) board
+    where 
+        helper :: Int -> BoardPosition ->  BoardPosition -> Seq (Seq SudokuDigit) -> BoardPosition
+        helper minCnt minPos newPos (Empty) = minPos
+        helper minCnt minPos (r,c) ((Empty) :<| xs) = helper minCnt minPos ((r+1),0) xs
+        helper minCnt minPos pos@(r,c) ((x :<| xs) :<| xss) 
+            | x == Blank = let  newVals = Set.size (legalValues pos (Board board))
+                                nextPos = (r,(c+1))
+                                nextSeq = (xs <| xss) in 
+                                case (minCnt == (-1)) || (newVals < minCnt) of
+                                    True -> helper newVals pos nextPos nextSeq
+                                    False -> helper minCnt minPos nextPos nextSeq
+            | otherwise = helper minCnt minPos (r,(c+1)) (xs <| xss)

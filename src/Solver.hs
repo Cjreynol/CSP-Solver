@@ -41,7 +41,7 @@ recBacktracking' pos (x:xs) board
         nextTry = recBacktracking' pos xs board
 
 minRemainingValues :: CSP a v d => a -> v
-minRemainingValues board = fst . head . reverse  $ List.sortBy (comparing snd) (valueCount board)
+minRemainingValues board = minValueCount board
 
 leastConstrainingValue :: CSP a v d => v -> a -> [d]
 leastConstrainingValue pos board = map fst $ List.sortBy (comparing snd) valsCounts
