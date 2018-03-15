@@ -6,21 +6,15 @@ Copyright   : (c) Chad Reynolds, 2018
 -}
 module SudokuBoard(
     SudokuBoard(Board),
-    BoardPosition,
-    getAllRelatedPositions,
-    legalDigits,
     strToBoard,
-    updateBoard,
-    validBoard,
-    solvedBoard
     ) where
 
 
 import              Data.Sequence as Seq    (Seq(..), adjust', fromList, 
                                                 index, replicate, 
-                                                update, (><))
+                                                update, (><), (<|))
 import qualified    Data.Set as Set         (Set, delete, empty, insert, 
-                                                member)
+                                                member, size)
 
 import              CSP                     (CSP(..), Problem(..))
 import              SudokuDigit             (SudokuDigit(Blank), charToDigit,
@@ -42,6 +36,7 @@ instance CSP SudokuBoard BoardPosition SudokuDigit where
     legalValues = legalDigits
     relatedVariables = \bp b -> getAllRelatedPositions bp
     addAssignment = updateBoard
+    valueCount = digitCount
 
 boardShow :: SudokuBoard -> String
 boardShow (Board Empty) = ""
@@ -186,3 +181,14 @@ legalDigits pos@(r,c) board
             | digit == Blank = set
             | otherwise = Set.delete digit set
 
+digitCount :: SudokuBoard -> [(BoardPosition, Int)]
+digitCount (Board board) = helper [] (0,0) board
+    where
+        helper :: [(BoardPosition, Int)] -> BoardPosition -> Seq (Seq SudokuDigit) -> [(BoardPosition, Int)]
+        helper l pos (Empty) = case l of
+                                [] -> [((0,0),0)] -- was default value of previos version
+                                _ -> l
+        helper l (r,c) ((Empty) :<| xs) = helper l ((r+1),0) xs
+        helper l pos@(r,c) ((x :<| xs) :<| xss) 
+            | x == Blank = helper ((pos,(Set.size (legalDigits pos (Board board)))):l) (r,(c+1)) (xs <| xss)
+            | otherwise = helper l (r,(c+1)) (xs <| xss)

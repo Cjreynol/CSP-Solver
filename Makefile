@@ -1,6 +1,9 @@
 main:
 	ghc src/Main.hs -XFlexibleInstances -XMultiParamTypeClasses -XFunctionalDependencies -XTypeSynonymInstances -isrc -outputdir bin -o solver
 
+interactive:
+	ghci -XFlexibleInstances -XMultiParamTypeClasses -XFunctionalDependencies -XTypeSynonymInstances -isrc Main
+
 documentation:
 	haddock -o docs -h src/*.hs
 
