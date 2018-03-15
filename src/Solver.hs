@@ -1,6 +1,6 @@
 {-|
 Module      : Solver
-Description : Functions for solving board
+Description : Functions for solving assignments
 Copyright   : (c) Chad Reynolds, 2018
 -}
 module Solver(
@@ -12,42 +12,46 @@ import qualified    Data.List as List       (sortBy)
 import              Data.Ord                (comparing)
 import qualified    Data.Set as Set         (Set, size, toList)
 
-import              CSP                     (CSP(..), Problem(..))
+import              CSP                     (CSP(..), Assignment(..))
 
 
--- | Recursively attempts placements of digits in positions, backtracking 
--- when an invalid placement is made.  Uses MRV to direct position choices 
--- and LCV to direct digit choices to minimize the amount of backtracking.
+-- | Recursively attempts assignment of values in variables, backtracking 
+-- when an invalid assignment is made.  Uses MRV to direct variable choices 
+-- and LCV to direct value choices to minimize the amount of backtracking.
 recBacktracking :: CSP a v d => a -> a
-recBacktracking board = recBacktracking' nextPos posValues board
+recBacktracking assignments = recBacktracking' nextVar posValues assignments
     where
-        nextPos = minRemainingValues board
-        posValues = leastConstrainingValue nextPos board
+        nextVar = minRemainingValues assignments
+        posValues = leastConstrainingValues nextVar assignments
 
 recBacktracking' :: CSP a v d => v -> [d] -> a -> a
-recBacktracking' pos [] board = board
-recBacktracking' pos (x:xs) board 
-    | complete board = board
-    | consistent board = 
+recBacktracking' var [] assignments = assignments
+recBacktracking' var (x:xs) assignments 
+    | complete assignments = assignments
+    | consistent assignments = 
         case complete recResult of 
             True -> recResult
             False ->  nextTry
     | otherwise = nextTry
     where 
-        updatedBoard = addAssignment pos x board
-        nextPos = minRemainingValues updatedBoard
-        posValues = leastConstrainingValue nextPos updatedBoard
-        recResult = recBacktracking' nextPos posValues updatedBoard
-        nextTry = recBacktracking' pos xs board
+        updatedAssignments = addAssignment var x assignments
+        nextVar = minRemainingValues updatedAssignments
+        posValues = leastConstrainingValues nextVar updatedAssignments
+        recResult = recBacktracking' nextVar posValues updatedAssignments
+        nextTry = recBacktracking' var xs assignments
 
+-- | Returns the variable with the fewest available legal values available 
+-- for assignment.
 minRemainingValues :: CSP a v d => a -> v
-minRemainingValues board = minValueCount board
+minRemainingValues assignments = minValueCount assignments
 
-leastConstrainingValue :: CSP a v d => v -> a -> [d]
-leastConstrainingValue pos board = map fst $ List.sortBy (comparing snd) valsCounts
+-- | Returns a list of the legal values remaining for a given variable, 
+-- ordered by available values left in all variables constrained by the given.
+leastConstrainingValues :: CSP a v d => v -> a -> [d]
+leastConstrainingValues var assignments = map fst $ List.sortBy (comparing snd) valsCounts
     where 
-        vals = Set.toList $ legalValues pos board
-        relPositions = relatedVariables pos board
-        valsBoards = Prelude.zip vals $ map (\x -> addAssignment pos x board) vals
-        valsCounts = Prelude.zip vals $ map ((\b -> sum (map (\p -> Set.size (legalValues p b)) relPositions)) . snd) valsBoards
+        vals = Set.toList $ legalValues var assignments
+        relVars = relatedVariables var assignments
+        valsAssignments = zip vals $ map (\x -> addAssignment var x assignments) vals
+        valsCounts = zip vals $ map ((\b -> sum (map (\p -> Set.size (legalValues p b)) relVars)) . snd) valsAssignments
 

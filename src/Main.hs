@@ -15,7 +15,8 @@ import SudokuBoard          (strToBoard)
 
 
 -- | Main loop of execution.
--- Depending on the number of command-line arguments are available:
+-- 
+-- Results depend on the number of command-line arguments available:
 -- 
 -- One arg:     Convert string to board, solve, output.
 --

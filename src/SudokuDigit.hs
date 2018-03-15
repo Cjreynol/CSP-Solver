@@ -15,7 +15,7 @@ import Data.Set (Set, fromList)
 
 -- | Covers the available assignments for a SudokuBoard.
 --
--- Used instead of Ints to limit errors when creating boards.
+-- Used instead of Ints to limit potential errors  when creating boards.
 data SudokuDigit =  Blank | One | Two | 
                     Three | Four | Five | 
                     Six | Seven | Eight | Nine

@@ -8,7 +8,7 @@ Description : Datatype and functions for representing/manipulating a sudoku
 Copyright   : (c) Chad Reynolds, 2018
 -}
 module SudokuBoard(
-    SudokuBoard(Board),
+    SudokuBoard,
     strToBoard,
     ) where
 
@@ -19,7 +19,7 @@ import              Data.Sequence as Seq    (Seq(..), adjust', fromList,
 import qualified    Data.Set as Set         (Set, delete, empty, insert, 
                                                 member, size)
 
-import              CSP                     (CSP(..), Problem(..))
+import              CSP                     (CSP(..), Assignment(..))
 import              SudokuDigit             (SudokuDigit(Blank), charToDigit,
                                                 sudokuDomain)
 
@@ -31,7 +31,7 @@ data SudokuBoard = Board (Seq (Seq SudokuDigit))
 instance Show SudokuBoard where
     show = boardShow
 
-instance Problem SudokuBoard where
+instance Assignment SudokuBoard where
     consistent = validBoard
     complete = solvedBoard
 
@@ -51,7 +51,7 @@ rowShow (Empty) = ""
 rowShow (x :<| Empty) = show x
 rowShow (x :<| xs) = show x ++ " | " ++ rowShow xs
 
--- | Represents the row, column pairs to index positions in the board.
+-- | Represents the row, column pairs used as index positions in the board.
 type BoardPosition = (Int, Int)
 
 emptyBoard :: SudokuBoard
@@ -78,11 +78,9 @@ strToInitList s = zipWith helper [0..] s
 strToBoard :: String -> SudokuBoard
 strToBoard s = initializeBoard . strToInitList $ s
 
--- | Returns a new board with the digit in the given position.
 updateBoard :: BoardPosition -> SudokuDigit -> SudokuBoard -> SudokuBoard
 updateBoard (r,c) digit (Board board) = Board (adjust' (update c digit) r board)
 
--- | Returns the digit in the given board at the given position.
 getDigit :: BoardPosition -> SudokuBoard -> SudokuDigit
 getDigit (r,c) (Board board) = index (index board r) c
 
@@ -155,8 +153,6 @@ validCols board = checkGen checkIfValidSeq getCol board
 validCages :: SudokuBoard -> Bool
 validCages board = checkGen checkIfValidSeq getCage board
 
--- | Returns a boolean indicating if the board is valid(no duplicates in any 
--- row/col/cage, blanks allowed).
 validBoard :: SudokuBoard -> Bool
 validBoard board = (validRows board) && (validCols board) && (validCages board)
 
@@ -169,11 +165,10 @@ solvedCols board = checkGen checkIfSolvedSeq getCol board
 solvedCages :: SudokuBoard -> Bool
 solvedCages board = checkGen checkIfSolvedSeq getCage board
 
--- | Returns a boolean indicating if the board is solved(no duplicates in any 
--- row/col/cage, blanks not allowed).
 solvedBoard :: SudokuBoard -> Bool
 solvedBoard board = (solvedRows board) && (solvedCols board) && (solvedCages board)
 
+-- | Returns the legal values assignments for a given position on the board
 legalDigits :: BoardPosition -> SudokuBoard -> Set.Set SudokuDigit
 legalDigits pos@(r,c) board 
     | getDigit pos board == Blank = foldr helper sudokuDomain (getAllRelatedDigits pos board)
@@ -184,6 +179,9 @@ legalDigits pos@(r,c) board
             | digit == Blank = set
             | otherwise = Set.delete digit set
 
+-- | Is an implementation of the MRV algorithm specific to SudokuBoard.  
+-- Keeps track of the board position with the minimum available assignments, 
+-- with a default value of (0,0) if they are all equal.
 minDigitCount :: SudokuBoard -> BoardPosition
 minDigitCount (Board board) = helper (-1) (0,0) (0,0) board
     where 
@@ -198,3 +196,4 @@ minDigitCount (Board board) = helper (-1) (0,0) (0,0) board
                                     True -> helper newVals pos nextPos nextSeq
                                     False -> helper minCnt minPos nextPos nextSeq
             | otherwise = helper minCnt minPos (r,(c+1)) (xs <| xss)
+
