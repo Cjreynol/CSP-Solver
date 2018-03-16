@@ -12,7 +12,7 @@ import Data.Char            (toLower)
 import System.Environment   (getArgs)
 
 import Solver               (recBacktracking)
-import SudokuBoard          (SudokuBoard)
+import Sudoku.SudokuBoard   (SudokuBoard)
 
 
 -- | Main loop of execution.

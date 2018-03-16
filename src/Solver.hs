@@ -10,7 +10,7 @@ module Solver(
 
 import qualified    Data.List as List       (sortBy)
 import              Data.Ord                (comparing)
-import qualified    Data.Set as Set         (Set, size, toList)
+import              Data.Set                (size, toList)
 
 import              CSP                     (CSP(..), Assignment(..))
 
@@ -25,7 +25,7 @@ recBacktracking assignments = recBacktracking' nextVar posValues assignments
         posValues = leastConstrainingValues nextVar assignments
 
 recBacktracking' :: CSP a v d => v -> [d] -> a -> a
-recBacktracking' var [] assignments = assignments
+recBacktracking' _ [] assignments = assignments
 recBacktracking' var (x:xs) assignments 
     | complete assignments = assignments
     | consistent assignments = 
@@ -50,8 +50,8 @@ minRemainingValues assignments = minValueCount assignments
 leastConstrainingValues :: CSP a v d => v -> a -> [d]
 leastConstrainingValues var assignments = map fst $ List.sortBy (comparing snd) valsCounts
     where 
-        vals = Set.toList $ legalValues var assignments
+        vals = toList $ legalValues var assignments
         relVars = relatedVariables var assignments
         valsAssignments = zip vals $ map (\x -> addAssignment var x assignments) vals
-        valsCounts = zip vals $ map ((\b -> sum (map (\p -> Set.size (legalValues p b)) relVars)) . snd) valsAssignments
+        valsCounts = zip vals $ map ((\b -> sum (map (\p -> size (legalValues p b)) relVars)) . snd) valsAssignments
 

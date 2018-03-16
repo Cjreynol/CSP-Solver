@@ -7,7 +7,7 @@ Description : Datatype and functions for representing/manipulating a sudoku
                 board
 Copyright   : (c) Chad Reynolds, 2018
 -}
-module SudokuBoard(
+module Sudoku.SudokuBoard(
     SudokuBoard,
     ) where
 
@@ -19,7 +19,7 @@ import qualified    Data.Set as Set         (Set, delete, empty, insert,
                                                 member, size)
 
 import              CSP                     (CSP(..), Assignment(..))
-import              SudokuDigit             (SudokuDigit(Blank), charToDigit,
+import              Sudoku.SudokuDigit      (SudokuDigit(Blank), charToDigit,
                                                 sudokuDomain)
 
 
@@ -39,7 +39,7 @@ instance Assignment SudokuBoard where
 
 instance CSP SudokuBoard BoardPosition SudokuDigit where
     legalValues = legalDigits
-    relatedVariables = \bp b -> getAllRelatedPositions bp
+    relatedVariables = \bp _ -> getAllRelatedPositions bp
     addAssignment = updateBoard
     minValueCount = minDigitCount
 
@@ -131,7 +131,7 @@ checkIfSeqGen :: Bool -> Seq SudokuDigit -> Bool
 checkIfSeqGen solveCheck digits = helper digits Set.empty
     where
         helper :: Seq SudokuDigit -> Set.Set SudokuDigit -> Bool
-        helper (Empty) set = True
+        helper (Empty) _ = True
         helper (x:<|xs) set 
             | x == Blank = (not solveCheck) && helper xs set
             | not (Set.member x set) = helper xs (Set.insert x set)
@@ -172,7 +172,7 @@ solvedBoard board = (solvedRows board) && (solvedCols board) && (solvedCages boa
 
 -- | Returns the legal values assignments for a given position on the board
 legalDigits :: BoardPosition -> SudokuBoard -> Set.Set SudokuDigit
-legalDigits pos@(r,c) board 
+legalDigits pos board 
     | getDigit pos board == Blank = foldr helper sudokuDomain (getAllRelatedDigits pos board)
     | otherwise = Set.empty
     where 
@@ -188,8 +188,8 @@ minDigitCount :: SudokuBoard -> BoardPosition
 minDigitCount (Board board) = helper (-1) (0,0) (0,0) board
     where 
         helper :: Int -> BoardPosition ->  BoardPosition -> Seq (Seq SudokuDigit) -> BoardPosition
-        helper minCnt minPos newPos (Empty) = minPos
-        helper minCnt minPos (r,c) ((Empty) :<| xs) = helper minCnt minPos ((r+1),0) xs
+        helper _ minPos _ (Empty) = minPos
+        helper minCnt minPos (r,_) ((Empty) :<| xs) = helper minCnt minPos ((r+1),0) xs
         helper minCnt minPos pos@(r,c) ((x :<| xs) :<| xss) 
             | x == Blank = let  newVals = Set.size (legalValues pos (Board board))
                                 nextPos = (r,(c+1))
