@@ -9,6 +9,7 @@ module Main(
 
 
 import Data.Char            (toLower)
+import Data.List            (uncons)
 import System.Environment   (getArgs)
 
 import Solver               (recBacktracking)
@@ -29,7 +30,8 @@ import Sudoku.SudokuBoard   (SudokuBoard)
 main :: IO ()
 main = do
         args <- getArgs
-        processInput (map toLower (head args)) (tail args)
+        let (typeStr,argList) = maybe ("", []) id (uncons args) in
+            processInput (fmap toLower typeStr) argList
 
 processInput :: String -> [String] -> IO ()
 processInput typeStr args = case length args of 

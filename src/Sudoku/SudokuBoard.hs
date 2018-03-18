@@ -27,6 +27,12 @@ import              Sudoku.SudokuDigit      (SudokuDigit(Blank), charToDigit,
 data SudokuBoard = Board (Seq (Seq SudokuDigit))
     deriving (Eq)
 
+-- | Represents the row, column pairs used as index positions in the board.
+type BoardPosition = (Int, Int)
+
+boardSize :: Int
+boardSize = 9
+
 instance Show SudokuBoard where
     show = showBoard
 
@@ -53,11 +59,8 @@ rowShow (Empty) = ""
 rowShow (x :<| Empty) = show x
 rowShow (x :<| xs) = show x ++ " | " ++ rowShow xs
 
--- | Represents the row, column pairs used as index positions in the board.
-type BoardPosition = (Int, Int)
-
 emptyBoard :: SudokuBoard
-emptyBoard = Board (Seq.replicate 9 $ Seq.replicate 9 Blank)
+emptyBoard = Board (Seq.replicate boardSize $ Seq.replicate boardSize Blank)
 
 initializeBoard :: [(BoardPosition, SudokuDigit)] -> SudokuBoard
 initializeBoard updates = foldr helper emptyBoard updates
@@ -71,11 +74,9 @@ strToInitList s = zipWith helper [0..] s
         helper :: Int -> Char -> (BoardPosition, SudokuDigit)
         helper n ch = (indexToBoardPos n, charToDigit ch)
         indexToBoardPos :: Int -> BoardPosition
-        indexToBoardPos n = (div n 9, mod n 9)
+        indexToBoardPos n = (div n boardSize, mod n boardSize)
 
--- | Converts a string into a sudoku board.
---
--- Expects a string of 81 characters of digits 1-9.  Any other char is 
+-- | Expects a string of 81 characters of digits 1-9.  Any other char is 
 -- interpreted as a Blank.
 readBoard :: String -> SudokuBoard
 readBoard s = initializeBoard . strToInitList $ s
@@ -96,7 +97,7 @@ cagePosFromBoardPos :: BoardPosition -> Int
 cagePosFromBoardPos (r,c) = ((div r 3) * 3) + (mod (div c 3) 3)
 
 getCage :: Int -> SudokuBoard -> Seq SudokuDigit
-getCage n board = fromList $ map (\z -> getDigit z board) [(x,y) | x <- [startr..endr], y <- [startc..endc]]
+getCage n board = fromList $ fmap (\z -> getDigit z board) [(x,y) | x <- [startr..endr], y <- [startc..endc]]
     where
         startr = (div n 3) * 3
         startc = (mod n 3) * 3
@@ -144,7 +145,7 @@ checkIfSolvedSeq :: Seq SudokuDigit -> Bool
 checkIfSolvedSeq digits = checkIfSeqGen True digits
 
 checkGen :: (Seq SudokuDigit -> Bool) -> (Int -> SudokuBoard -> Seq SudokuDigit) -> SudokuBoard -> Bool
-checkGen f g board = foldr (\x y -> (f x) && y) True (map (\x -> g x board) [0..8])
+checkGen f g board = foldr (\x y -> (f x) && y) True (fmap (\x -> g x board) [0..8])
 
 validRows :: SudokuBoard -> Bool
 validRows board = checkGen checkIfValidSeq getRow board

@@ -48,10 +48,10 @@ minRemainingValues assignments = minValueCount assignments
 -- | Returns a list of the legal values remaining for a given variable, 
 -- ordered by available values left in all variables constrained by the given.
 leastConstrainingValues :: CSP a v d => v -> a -> [d]
-leastConstrainingValues var assignments = map fst $ List.sortBy (comparing snd) valsCounts
+leastConstrainingValues var assignments = fmap fst $ List.sortBy (comparing snd) valsCounts
     where 
         vals = toList $ legalValues var assignments
         relVars = relatedVariables var assignments
-        valsAssignments = zip vals $ map (\x -> addAssignment var x assignments) vals
-        valsCounts = zip vals $ map ((\b -> sum (map (\p -> size (legalValues p b)) relVars)) . snd) valsAssignments
+        valsAssignments = zip vals $ fmap (\x -> addAssignment var x assignments) vals
+        valsCounts = zip vals $ fmap ((\b -> sum (fmap (\p -> size (legalValues p b)) relVars)) . snd) valsAssignments
 
