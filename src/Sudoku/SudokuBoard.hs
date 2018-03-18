@@ -66,7 +66,7 @@ initializeBoard :: [(BoardPosition, SudokuDigit)] -> SudokuBoard
 initializeBoard updates = foldr helper emptyBoard updates
     where 
         helper :: (BoardPosition, SudokuDigit) -> SudokuBoard -> SudokuBoard
-        helper (pos,digit) board = updateBoard pos digit board
+        helper (pos,digit) b = updateBoard pos digit b
 
 strToInitList :: String -> [(BoardPosition, SudokuDigit)]
 strToInitList s = zipWith helper [0..] s
@@ -82,99 +82,82 @@ readBoard :: String -> SudokuBoard
 readBoard s = initializeBoard . strToInitList $ s
 
 updateBoard :: BoardPosition -> SudokuDigit -> SudokuBoard -> SudokuBoard
-updateBoard (r,c) digit (Board board) = Board (adjust' (update c digit) r board)
+updateBoard (r,c) digit (Board b) = Board $ adjust' (update c digit) r b
 
 getDigit :: BoardPosition -> SudokuBoard -> SudokuDigit
-getDigit (r,c) (Board board) = index (index board r) c
+getDigit (r,c) (Board b) = index (index b r) c
 
 getRow :: Int -> SudokuBoard -> Seq SudokuDigit
-getRow n (Board board) = index board n
+getRow n (Board b) = index b n
 
 getCol :: Int -> SudokuBoard -> Seq SudokuDigit
-getCol n (Board board) = fmap (\x -> index x n) board
-
-cagePosFromBoardPos :: BoardPosition -> Int
-cagePosFromBoardPos (r,c) = ((div r 3) * 3) + (mod (div c 3) 3)
+getCol n (Board b) = fmap (\x -> index x n) b
 
 getCage :: Int -> SudokuBoard -> Seq SudokuDigit
-getCage n board = fromList $ fmap (\z -> getDigit z board) [(x,y) | x <- [startr..endr], y <- [startc..endc]]
+getCage n b = fromList $ fmap (\z -> getDigit z b) $ getCageIndices (r,c)
     where
-        startr = (div n 3) * 3
-        startc = (mod n 3) * 3
-        endr = startr + 2
-        endc = startc + 2
+        r = (div n 3) * 3
+        c = (mod n 3) * 3
+
+getCageIndices :: BoardPosition -> [BoardPosition]
+getCageIndices (r,c) = [(x,y) | x <- [startR..endR], y <- [startC..endC]]
+    where
+        startR = (div r 3)  * 3
+        endR = startR + 2
+        startC = (div c 3) * 3
+        endC = startC + 2
 
 -- | Returns a sequence of all the digits in the same row/col/cage as the 
 -- given position, including the given position.
 getAllRelatedDigits :: BoardPosition -> SudokuBoard -> Seq SudokuDigit
-getAllRelatedDigits pos@(r,c) board = (getRow r board) >< (getCol c board) >< (getCage (cagePosFromBoardPos pos) board)
-
-getRowPositions :: Int -> [BoardPosition]
-getRowPositions n = [(r,c) | r <- [n], c <- [0..8]]
-
-getColPositions :: Int -> [BoardPosition]
-getColPositions n = [(r,c) | r <- [0..8], c <- [n]]
-
-getCagePositions :: Int -> [BoardPosition]
-getCagePositions n = [(x,y) | x <- [startr..endr], y <- [startc..endc]]
+getAllRelatedDigits (r,c) b = row >< col >< cage
     where
-        startr = (div n 3) * 3
-        startc = (mod n 3) * 3
-        endr = startr + 2
-        endc = startc + 2
+        row = getRow r b
+        col = getCol c b
+        cage = getCage cageIndex b
+        cageIndex = ((div r 3) * 3) + (mod (div c 3) 3)
 
 -- | Returns a list of all the board positions in the same row/col/cage as the 
 -- given position, including the given position.
 getAllRelatedPositions :: BoardPosition -> [BoardPosition]
-getAllRelatedPositions pos@(r,c) = (getRowPositions r) ++ (getColPositions c) ++ (getCagePositions (cagePosFromBoardPos pos))
-
-checkIfSeqGen :: Bool -> Seq SudokuDigit -> Bool
-checkIfSeqGen solveCheck digits = helper digits Set.empty
+getAllRelatedPositions pos@(r,c) = row ++ col ++ cage
     where
-        helper :: Seq SudokuDigit -> Set.Set SudokuDigit -> Bool
-        helper (Empty) _ = True
-        helper (x:<|xs) set 
-            | x == Blank = (not solveCheck) && helper xs set
-            | not (Set.member x set) = helper xs (Set.insert x set)
+        row = [(x,y) | x <- [r], y <- [0..8]]
+        col = [(x,y) | x <- [0..8], y <- [c]]
+        cage = getCageIndices pos
+
+checkGen :: Bool -> (Int -> SudokuBoard -> Seq SudokuDigit) -> SudokuBoard -> Bool
+checkGen solveCheck f b = foldr (&&) True uniqueSeqs
+    where
+        relSeqs = fmap (\x -> f x b) [0..8]
+        uniqueSeqs = fmap (\x -> allUnique x Set.empty) relSeqs
+        -- | Tests for uniqueness of elements in the sequence, but relies on 
+        -- some Sudoku specific knowledge to improve the runtime
+        allUnique :: Seq SudokuDigit -> Set.Set SudokuDigit -> Bool
+        allUnique (Empty) _ = True
+        allUnique (x:<|xs) set 
+            | x == Blank = (not solveCheck) && allUnique xs set
+            | not (Set.member x set) = allUnique xs $ Set.insert x set
             | otherwise = False
 
-checkIfValidSeq :: Seq SudokuDigit -> Bool
-checkIfValidSeq digits = checkIfSeqGen False digits
-
-checkIfSolvedSeq :: Seq SudokuDigit -> Bool
-checkIfSolvedSeq digits = checkIfSeqGen True digits
-
-checkGen :: (Seq SudokuDigit -> Bool) -> (Int -> SudokuBoard -> Seq SudokuDigit) -> SudokuBoard -> Bool
-checkGen f g board = foldr (\x y -> (f x) && y) True (fmap (\x -> g x board) [0..8])
-
-validRows :: SudokuBoard -> Bool
-validRows board = checkGen checkIfValidSeq getRow board
-
-validCols :: SudokuBoard -> Bool
-validCols board = checkGen checkIfValidSeq getCol board
-
-validCages :: SudokuBoard -> Bool
-validCages board = checkGen checkIfValidSeq getCage board
-
 validBoard :: SudokuBoard -> Bool
-validBoard board = (validRows board) && (validCols board) && (validCages board)
-
-solvedRows :: SudokuBoard -> Bool
-solvedRows board = checkGen checkIfSolvedSeq getRow board
-
-solvedCols :: SudokuBoard -> Bool
-solvedCols board = checkGen checkIfSolvedSeq getCol board
-
-solvedCages :: SudokuBoard -> Bool
-solvedCages board = checkGen checkIfSolvedSeq getCage board
+validBoard b = validRows && validCols && validCages
+    where
+        validRows = checkGen False getRow b
+        validCols = checkGen False getCol b
+        validCages = checkGen False getCage b
 
 solvedBoard :: SudokuBoard -> Bool
-solvedBoard board = (solvedRows board) && (solvedCols board) && (solvedCages board)
+solvedBoard b = solvedRows && solvedCols && solvedCages
+    where
+        solvedRows = checkGen True getRow b
+        solvedCols = checkGen True getCol b
+        solvedCages = checkGen True getCage b
 
 -- | Returns the legal values assignments for a given position on the board
 legalDigits :: BoardPosition -> SudokuBoard -> Set.Set SudokuDigit
-legalDigits pos board 
-    | getDigit pos board == Blank = foldr helper sudokuDomain (getAllRelatedDigits pos board)
+legalDigits pos b 
+    | getDigit pos b == Blank = foldr helper sudokuDomain (getAllRelatedDigits pos b)
     | otherwise = Set.empty
     where 
         helper :: SudokuDigit -> Set.Set SudokuDigit -> Set.Set SudokuDigit
@@ -186,13 +169,13 @@ legalDigits pos board
 -- Keeps track of the board position with the minimum available assignments, 
 -- with a default value of (0,0) if they are all equal.
 minDigitCount :: SudokuBoard -> BoardPosition
-minDigitCount (Board board) = helper (-1) (0,0) (0,0) board
+minDigitCount (Board b) = helper (-1) (0,0) (0,0) b
     where 
         helper :: Int -> BoardPosition ->  BoardPosition -> Seq (Seq SudokuDigit) -> BoardPosition
         helper _ minPos _ (Empty) = minPos
         helper minCnt minPos (r,_) ((Empty) :<| xs) = helper minCnt minPos ((r+1),0) xs
         helper minCnt minPos pos@(r,c) ((x :<| xs) :<| xss) 
-            | x == Blank = let  newVals = Set.size (legalValues pos (Board board))
+            | x == Blank = let  newVals = Set.size (legalValues pos (Board b))
                                 nextPos = (r,(c+1))
                                 nextSeq = (xs <| xss) in 
                                 case (minCnt == (-1)) || (newVals < minCnt) of
