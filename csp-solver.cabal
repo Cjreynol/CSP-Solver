@@ -1,0 +1,36 @@
+name:                csp-solver
+version:             0.1.0.0
+synopsis:            Tools for creating and solving CSPs
+-- description:         
+license:             MIT
+license-file:        LICENSE
+author:              Chad Reynolds
+maintainer:          cjreynol13@aol.com
+stability:           experimental
+copyright:           (c) 2018 Chad Reynolds
+category:            AI
+build-type:          Simple
+extra-source-files:  README.md
+
+cabal-version:       >=1.10
+
+source-repository head
+    type:           git
+    location:       git://github.com/Cjreynol/CSP-Solver.git
+
+executable csp-solver
+  main-is:              Main.hs
+
+  other-modules:        CSP,
+                        Solver,
+                        Sudoku.SudokuBoard,
+                        Sudoku.SudokuDigit
+
+  other-extensions:    FunctionalDependencies, MultiParamTypeClasses, FlexibleInstances, TypeSynonymInstances
+  
+  build-depends:       base >=4.10 && <4.11, containers >=0.5 && <0.6
+  
+  hs-source-dirs:      src
+  
+  default-language:    Haskell2010
+  

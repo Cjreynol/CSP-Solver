@@ -2,6 +2,7 @@
 Module      : SudokuDigit
 Description : Datatype for domain of SudokuBoard "squares"
 Copyright   : (c) Chad Reynolds, 2018
+License     : MIT
 -}
 module Sudoku.SudokuDigit(
     SudokuDigit(Blank),

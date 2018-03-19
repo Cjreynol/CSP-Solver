@@ -12,9 +12,11 @@ with a version of GHC that supports:
   
 - pattern synonyms and the constructors for Sequence(Empty, :<|, |>:)
 - The language extensions MultiParamTypeClass, FunctionalDependencies, FlexibleInstances, TypeSynonymInstances
+
+See the included `.cabal` file for specific version requirements.
   
-To build, running the `make` command in the project directory to compile the 
-solver executable.  Running `make all` will compile the haddock docs as well.  
+From the root directory, run `cabal build` to install dependencies and build 
+the executable, which will be located in the dist/build/csp-solver directory.  
   
 ## To Run  
 Run the executable from the command line, with arguments as follows:  

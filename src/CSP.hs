@@ -5,6 +5,7 @@
 Module      : CSP
 Description : Typeclass definitions for for Constraint Satisfaction Problems
 Copyright   : (c) Chad Reynolds, 2018
+License     : MIT
 -}
 module CSP(
     CSP(..),

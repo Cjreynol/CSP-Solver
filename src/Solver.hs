@@ -2,6 +2,7 @@
 Module      : Solver
 Description : Functions for solving assignments
 Copyright   : (c) Chad Reynolds, 2018
+License     : MIT
 -}
 module Solver(
     recBacktracking

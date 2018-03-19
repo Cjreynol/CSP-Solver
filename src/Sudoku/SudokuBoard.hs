@@ -6,6 +6,7 @@ Module      : SudokuBoard
 Description : Datatype and functions for representing/manipulating a sudoku 
                 board
 Copyright   : (c) Chad Reynolds, 2018
+License     : MIT
 -}
 module Sudoku.SudokuBoard(
     SudokuBoard,
