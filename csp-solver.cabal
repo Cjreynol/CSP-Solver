@@ -1,38 +1,41 @@
-name:                csp-solver
-version:             0.1.0.0
-synopsis:            Tools for creating and solving CSPs
+name:                   csp-solver
+version:                0.1.0.0
+cabal-version:          >= 1.12
+build-type:             Simple
+license:                MIT
+license-file:           LICENSE
+copyright:              (c) 2018 Chad Reynolds
+author:                 Chad Reynolds
+maintainer:             cjreynol13@aol.com
+stability:              experimental
+homepage:               https://github.com/Cjreynol/csp-solver
+bug-reports:            https://github.com/Cjreynol/csp-solver/issues
+synopsis:               Tools for creating and solving CSPs
 -- description:         
-license:             MIT
-license-file:        LICENSE
-author:              Chad Reynolds
-maintainer:          cjreynol13@aol.com
-stability:           experimental
-copyright:           (c) 2018 Chad Reynolds
-category:            AI
-build-type:          Simple
-extra-source-files:  README.md
 
-cabal-version:       >=1.10
+category:               AI
+tested-with:            GHC == 8.4.3
+extra-source-files:     README.md
+
 
 source-repository head
-    type:           git
-    location:       git://github.com/Cjreynol/CSP-Solver.git
+    type:               git
+    location:           git://github.com/Cjreynol/csp-solver.git
 
 executable csp-solver
-  main-is:              Main.hs
-
-  other-modules:        CSP,
+    main-is:            Main.hs
+    build-depends:        base >= 4.11 && < 4.12 
+                        , containers >= 0.5 && < 0.6
+    hs-source-dirs:     src
+    other-extensions:   FunctionalDependencies, MultiParamTypeClasses, FlexibleInstances, TypeSynonymInstances
+    default-language:   Haskell2010
+    other-modules:      CSP,
                         Solver,
                         Sudoku.SudokuBoard,
                         Sudoku.SudokuDigit
-
-  other-extensions:    FunctionalDependencies, MultiParamTypeClasses, FlexibleInstances, TypeSynonymInstances
-  
-  build-depends:       base >=4.10 && <4.11, containers >=0.5 && <0.6
-  
-  hs-source-dirs:      src
-  
-  default-language:    Haskell2010
-  
-  ghc-options: -Wall
+    ghc-options:        -Wall 
+                        -Wcompat 
+                        -Wincomplete-uni-patterns 
+                        -Wincomplete-record-updates 
+                        -Wmissing-import-lists
 
