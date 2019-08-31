@@ -30,6 +30,7 @@ import Sudoku.SudokuBoard   (SudokuBoard)
 -- Zero args:   Prompt for input string, execute one arg logic.
 main :: IO ()
 main = do
+        putStrLn "Enter puzzle type and one or two sudoku strings, or just a puzzle string."
         args <- getArgs
         let (typeStr,argList) = maybe ("", []) id (uncons args) in
             processInput (fmap toLower typeStr) argList
@@ -43,6 +44,7 @@ processInput typeStr args = case length args of
 
 loopSolving :: String -> IO ()
 loopSolving typeStr = do
+                        putStrLn "Input problem string"
                         input <- getLine
                         case input == "" of
                             True -> loopSolving typeStr
@@ -52,7 +54,7 @@ loopSolving typeStr = do
 oneArg :: String -> String -> String
 oneArg typeStr s 
     | typeStr == "sudoku" = show . recBacktracking $ (read s :: SudokuBoard)
-    | otherwise = error "Unexpected problem type."
+    | otherwise = error $ "Unexpected problem type:  " ++ typeStr
 
 twoArg :: String -> String -> String -> String
 twoArg typeStr s1 s2 
@@ -61,5 +63,5 @@ twoArg typeStr s1 s2
                                 case prob1 == prob2 of
                                     True -> "Matching Solutions"
                                     False -> "Different Solutions"
-    | otherwise = error "Unexpected problem type."
+    | otherwise = error $ "Unexpected problem type:  " ++ typeStr
 
